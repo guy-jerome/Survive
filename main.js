@@ -1,5 +1,4 @@
 import Ball from "./ball.js"
-import Brain from "./brain.js"
 const ScreenWidth = 800
 const ScreenHeight = 800
 
@@ -12,21 +11,19 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view)
 
 
-const ball = new Ball(40,40)
-app.stage.addChild(ball.graphics)
+Ball.generateBalls(100,app)
 
 let elapsedTime = 0;
 app.ticker.add((delta)=>{
   elapsedTime += delta
-  ball.moveForward(app)
-  // if (elapsedTime >= 20) {
-  //   if (Math.floor(Math.random() * 2) === 1){
-  //     ball.turnLeft()
-  //   }else{
-  //     ball.turnRight()
-  //   }
-
-  //   elapsedTime = 0
-  // }
+  for (let ball of Ball.balls){
+    ball.moveForward(app)
+  }
+  if (elapsedTime >= 20) {
+    for (let ball of Ball.balls){
+      ball.decide()
+    }
+    elapsedTime = 0
+  }
 
 })

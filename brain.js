@@ -1,15 +1,15 @@
 class Brain{
   constructor(){
     this.inputLayer = new Layer(2);
-    this.hiddenLayer = new Layer(3);
-    this.outputLayer = new Layer(3);
-    inputLayer.project(hiddenLayer)
-    hiddenLayer.project(outputLayer)
+    this.hiddenLayer = new Layer(10);
+    this.outputLayer = new Layer(2);
+    this.inputLayer.project(this.hiddenLayer)
+    this.hiddenLayer.project(this.outputLayer)
 
     this.network = new Network({
-      input: inputLayer,
-      hidden: [hiddenLayer],
-      output: outputLayer
+      input: this.inputLayer,
+      hidden: [this.hiddenLayer],
+      output: this.outputLayer
   })
   }
 }
