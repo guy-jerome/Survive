@@ -22,6 +22,14 @@ class Food{
     this.graphics.x = x
     this.graphics.y = y
   }
+  destroy(){
+    this.app.stage.removeChild(this.graphics)
+    this.graphics.destroy();
+    const index = Food.foods.indexOf(this);
+    if (index !== -1) {
+      Food.foods.splice(index, 1);
+    }
+  }
 }
 
 export default Food

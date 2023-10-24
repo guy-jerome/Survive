@@ -11,20 +11,35 @@ const app = new PIXI.Application({
 
 document.body.appendChild(app.view)
 
+Food.generateFood(50,app)
+Ball.generateBalls(20,app)
 
-Ball.generateBalls(10,app)
-Food.generateFood(5,app)
+
 let elapsedTime = 0;
+let decideTime = 0
 app.ticker.add((delta)=>{
   elapsedTime += delta
+  decideTime += delta
   for (let ball of Ball.balls){
     ball.moveForward()
+    ball.checkFoodCollision()
+    ball.checkCollisionWithOtherBalls()
   }
-  if (elapsedTime >= 20) {
+  if (decideTime >= 10) {
     for (let ball of Ball.balls){
-      ball.checkCollisionWithOtherBalls(app)
+
       ball.decide()
+    } 
+    decideTime = 0
+  }
+  if (elapsedTime >= 100){
+    for (let ball of Ball.balls){
+      ball.checkSurvive()
     }
+    for (let food of Food.foods){
+      food.destroy()
+    }
+    Food.generateFood(50,app)
     elapsedTime = 0
   }
 

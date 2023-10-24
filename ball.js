@@ -1,6 +1,6 @@
 import Brain from "./brain.js"
-import {scaleNumbers} from "./utils.js"
-
+import {scaleNumbers, distanceForm} from "./utils.js"
+import Food from "./food.js"
 const BallWidth = 16;
 const BallHeight = 16;
 const BallColor = "white";
@@ -23,7 +23,8 @@ class Ball{
       Ball.balls.push(ball)
     }
   }
-  constructor(x, y, app, height = BallHeight, width = BallWidth){
+  constructor(x, y, app,  brain = new Brain(), height = BallHeight, width = BallWidth,){
+
     this.app = app
     this.speed = Speed
     this.direction = Dir.right
@@ -35,8 +36,8 @@ class Ball{
     this.graphics.endFill();
     this.graphics.x = x
     this.graphics.y = y
-
-    this.brain = new Brain()
+    this.foodEaten = 0
+    this.brain = brain
   }
   //movement
   moveForward(){
@@ -79,10 +80,12 @@ class Ball{
   }
   decide(){
     //Scales the inputs
+    let foodDistance = this.getNearestFood()
     let scaledX = scaleNumbers(this.graphics.x,this.app.renderer.width - BallWidth,0 )
     let scaledY = scaleNumbers(this.graphics.y,this.app.renderer.height- BallHeight,0)
     //Run inputs through the neural network
-    let results = this.brain.network.activate([scaledX,scaledY])
+
+    let results = this.brain.network.activate([scaledX,scaledY,...foodDistance])
     let maxNumber = Math.max(...results)
     //Check results and make decision
     let index = results.indexOf(maxNumber)
@@ -95,24 +98,74 @@ class Ball{
   checkCollisionWithOtherBalls() {
     for (let ball of Ball.balls) {
       if (ball !== this) {
-        const dx = ball.graphics.x - this.graphics.x;
-        const dy = ball.graphics.y - this.graphics.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < this.width) {
-          // Calculate the vector to move away from the colliding ball
-          const angle = Math.atan2(dy, dx);
-          const moveAwayX = Math.cos(angle);
-          const moveAwayY = Math.sin(angle);
+        let distance = distanceForm(this.graphics.x,this.graphics.y,ball.graphics.x,ball.graphics.y)
 
-          // Update the direction to move away from the collision
-          this.direction = [moveAwayX, moveAwayY];
-          this.moveForward()
+        // if (distance < this.width) {
+        //   // Calculate the vector to move away from the colliding ball
+        //   const angle = Math.atan2(dy, dx);
+        //   const moveAwayX = Math.cos(angle);
+        //   const moveAwayY = Math.sin(angle);
+
+        //   // Update the direction to move away from the collision
+        //   this.direction = [moveAwayX, moveAwayY];
+        //   this.moveForward()
           
-        }
+        // }
       }
     }
   }
+  getNearestFood(){
+    let min = [Food.foods[0], distanceForm(this.graphics.x, Food.foods[0].graphics.x,this.graphics.y,Food.foods[0].graphics.y)] 
+
+    for (let food of Food.foods){   
+      let distance = distanceForm(this.graphics.x,this.graphics.y,food.graphics.x,food.graphics.y)
+      if (min[1]>distance){
+        min = [food,distance]
+      }
+    }
+    let scaledX = scaleNumbers(min[0].graphics.x,this.app.renderer.width - BallWidth,0 )
+    let scaledY = scaleNumbers(min[0].graphics.y,this.app.renderer.height- BallHeight,0)
+    let scaledDist = scaleNumbers(min[1],Math.sqrt((this.app.renderer.width - BallWidth)**2 + (this.app.renderer.height- BallHeight)**2), 0)
+    return [scaledX,scaledY,scaledDist]
+  }
+  checkFoodCollision() {
+    for (let food of Food.foods) {
+      let distance = distanceForm(
+        this.graphics.x,
+        this.graphics.y,
+        food.graphics.x,
+        food.graphics.y
+      );
+      if (distance < this.width+16) {
+        food.destroy();
+        this.foodEaten++
+        
+      }
+    }
+  }
+  checkSurvive(){
+    if (this.foodEaten >1){
+      this.reproduce()
+    } else if(this.foodEaten < 1){
+      this.destroy()
+    }
+    this.foodEaten = 0
+  }
+  destroy(){
+    this.app.stage.removeChild(this.graphics)
+    this.graphics.destroy();
+    const index = Ball.balls.indexOf(this);
+    if (index !== -1) {
+      Ball.balls.splice(index, 1);
+    }
+  }
+  reproduce(){
+    let ball = new Ball((Math.random()*this.app.renderer.width - BallWidth),(Math.random()*this.app.renderer.height - BallHeight),this.app, this.brain)
+    this.app.stage.addChild(ball.graphics)
+    Ball.balls.push(ball)
+  }
+
 }
 
 export default Ball

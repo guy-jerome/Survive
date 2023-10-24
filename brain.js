@@ -1,6 +1,6 @@
 class Brain{
   constructor(){
-    this.inputLayer = new Layer(2);
+    this.inputLayer = new Layer(5);
     this.hiddenLayer = new Layer(10);
     this.outputLayer = new Layer(3);
     this.inputLayer.project(this.hiddenLayer)
@@ -10,8 +10,9 @@ class Brain{
       input: this.inputLayer,
       hidden: [this.hiddenLayer],
       output: this.outputLayer
-  })
+    })
   }
+  
 }
 
 export default Brain
