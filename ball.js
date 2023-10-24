@@ -1,9 +1,9 @@
 import Brain from "./brain.js"
+import {scaleNumbers} from "./utils.js"
 
-
-const BallWidth = 32;
-const BallHeight = 32;
-const BallColor = "green";
+const BallWidth = 16;
+const BallHeight = 16;
+const BallColor = "white";
 const Dir = {
   right: [1,0],
   left: [-1,0],
@@ -18,12 +18,13 @@ class Ball{
   static balls = []
   static generateBalls(nums, app){
     for (let i = 0; i < nums; i++){
-      let ball = new Ball((Math.random()*app.renderer.width - BallWidth),(Math.random()*app.renderer.height - BallHeight))
+      let ball = new Ball((Math.random()*app.renderer.width - BallWidth),(Math.random()*app.renderer.height - BallHeight),app)
       app.stage.addChild(ball.graphics)
       Ball.balls.push(ball)
     }
   }
-  constructor(x, y, height = BallHeight, width = BallWidth){
+  constructor(x, y, app, height = BallHeight, width = BallWidth){
+    this.app = app
     this.speed = Speed
     this.direction = Dir.right
     this.height = height;
@@ -38,17 +39,17 @@ class Ball{
     this.brain = new Brain()
   }
   //movement
-  moveForward(app){
+  moveForward(){
     this.graphics.x += this.direction[0] * this.speed
     this.graphics.y += this.direction[1] * this.speed
-    if (this.graphics.x > app.renderer.width - this.width){
-      this.graphics.x = app.renderer.width - this.width
+    if (this.graphics.x > this.app.renderer.width - this.width){
+      this.graphics.x = this.app.renderer.width - this.width
     }else if (this.graphics.x < 0){
       this.graphics.x = 0
     }
 
-    if(this.graphics.y > app.renderer.height - this.height){
-      this.graphics.y = app.renderer.height - this.height
+    if(this.graphics.y > this.app.renderer.height - this.height){
+      this.graphics.y = this.app.renderer.height - this.height
     }else if (this.graphics.y < 0){
       this.graphics.y = 0
     }
@@ -77,13 +78,39 @@ class Ball{
     }
   }
   decide(){
-    let results = this.brain.network.activate([this.graphics.x,this.graphics.y])
+    //Scales the inputs
+    let scaledX = scaleNumbers(this.graphics.x,this.app.renderer.width - BallWidth,0 )
+    let scaledY = scaleNumbers(this.graphics.y,this.app.renderer.height- BallHeight,0)
+    //Run inputs through the neural network
+    let results = this.brain.network.activate([scaledX,scaledY])
     let maxNumber = Math.max(...results)
+    //Check results and make decision
     let index = results.indexOf(maxNumber)
-    if (index === 1){
+    if (index === 0){
       this.turnRight()
-    }else{
+    }else if (index ===1){
       this.turnLeft()
+    }
+  }
+  checkCollisionWithOtherBalls() {
+    for (let ball of Ball.balls) {
+      if (ball !== this) {
+        const dx = ball.graphics.x - this.graphics.x;
+        const dy = ball.graphics.y - this.graphics.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < this.width) {
+          // Calculate the vector to move away from the colliding ball
+          const angle = Math.atan2(dy, dx);
+          const moveAwayX = Math.cos(angle);
+          const moveAwayY = Math.sin(angle);
+
+          // Update the direction to move away from the collision
+          this.direction = [moveAwayX, moveAwayY];
+          this.moveForward()
+          
+        }
+      }
     }
   }
 }
