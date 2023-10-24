@@ -78,14 +78,17 @@ class Ball{
       this.direction = Dir.left
     }
   }
-  decide(){
-    //Scales the inputs
+  outputNetwork(){
     let foodDistance = this.getNearestFood()
     let scaledX = scaleNumbers(this.graphics.x,this.app.renderer.width - BallWidth,0 )
     let scaledY = scaleNumbers(this.graphics.y,this.app.renderer.height- BallHeight,0)
     //Run inputs through the neural network
 
     let results = this.brain.network.activate([scaledX,scaledY,...foodDistance])
+    return results
+  }
+  decide(){
+    let results = this.outputNetwork()
     let maxNumber = Math.max(...results)
     //Check results and make decision
     let index = results.indexOf(maxNumber)
@@ -140,12 +143,14 @@ class Ball{
       if (distance < this.width+16) {
         food.destroy();
         this.foodEaten++
+        let positive = this.outputNetwork()
+        this.brain.network.propagate(.5, positive)
         
       }
     }
   }
   checkSurvive(){
-    if (this.foodEaten >1){
+    if (this.foodEaten >0){
       this.reproduce()
     } else if(this.foodEaten < 1){
       this.destroy()
